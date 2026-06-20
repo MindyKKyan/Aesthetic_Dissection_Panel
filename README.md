@@ -54,7 +54,7 @@ Open the Hugging Face Space — upload an image, see the LAION score, explore th
 git clone git@github.com:MindyKKyan/Aesthetic_Dissection_Panel.git
 cd Aesthetic_Dissection_Panel
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt   # installs packages/aesthetic_core automatically
+pip install -r requirements.txt   # aesthetic_core ships in-repo (no separate install)
 export PYTORCH_ENABLE_MPS_FALLBACK=1   # optional, M3 Mac
 python app.py
 # → http://127.0.0.1:7860

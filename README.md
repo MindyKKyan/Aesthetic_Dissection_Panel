@@ -13,56 +13,118 @@ license: apache-2.0
 
 # 🔬 Aesthetic Dissection Panel
 
-**Turn black-box aesthetic scores into auditable dimensions.**
+**Turn black-box aesthetic scores into auditable, visual dimensions.**
 
-Upload any image and get:
+Upload an image → get a LAION baseline score, five descriptive proxy bars, inspectable diagnostic maps, hue/temperature analysis, and monocular depth layer separation. UI supports **English · 简体中文 · 繁體中文**.
 
-1. **LAION Aesthetic Score** (0–10) — holistic baseline from CLIP ViT-L/14 + `sa_0_4_vit_l_14_linear.pth`
-2. **5 Dissection Sliders** — diagnostic proxies for:
-   - 🎨 **Color Harmony** — HSV hue entropy × luminance contrast ratio
-   - ⚖️ **Composition Balance** — saliency / luminance center-of-mass offset
-   - 🌈 **Saturation Intensity** — mean HSV saturation
-   - 🧩 **Edge Complexity** — Canny edge density
-   - 🌡️ **Warm / Cool** — circular hue centroid
-3. **Plain-English Rationales** — each slider includes an explanation of what the value means for your image (GPT-4o mini → HF Inference → rule-based template fallback)
+**Live demo:** [Hugging Face Space](https://huggingface.co/spaces/Mindykkyan/Aesthetic_Dissection_Panel)  
+**Source:** [GitHub](https://github.com/MindyKKyan/Aesthetic_Dissection_Panel)
+
+## What you get
+
+### 1. LAION Aesthetic Score (0–10)
+
+Holistic baseline from **CLIP ViT-L/14** + `sa_0_4_vit_l_14_linear.pth`.
+
+### 2. Five dissection proxies (descriptive, not prescriptive)
+
+Bars measure *what is present in the image*, not universal “good/bad” judgments:
+
+| Proxy | What it measures |
+|-------|------------------|
+| **Color Structure** | Hue diversity + luminance contrast |
+| **Visual Mass / Composition** | Saliency center-of-mass vs. image center |
+| **Color Vividness** | Mean saturation (muted → vivid) |
+| **Visual Texture / Detail** | Canny edge density |
+| **Color Temperature** | Warm vs. cool hue bias |
+
+Each bar includes sub-metrics, a level badge (low / moderate / high), and a plain-English rationale (GPT-4o mini → HF Inference → rule-based template fallback).
+
+### 3. Visual diagnostics
+
+- **Edge / texture map** — where fine structure appears  
+- **Attention heatmap** — saliency overlay  
+- **Composition grid** — rule-of-thirds + visual mass crosshair  
+- **Dominant palette** — coarse color clusters  
+- **Hue & temperature** — color ring, polar hue histogram, warm/cool bar (shown beside LAION score)
+
+### 4. Depth layer separation
+
+Monocular depth via **Intel DPT (`dpt-hybrid-midas`)** splits the image into:
+
+- Depth map (brighter = nearer)  
+- Foreground / midground / background layers  
+
+Relative depth only — not metric 3D reconstruction.
+
+### 5. Raw JSON + one-click copy
+
+Full metrics export at the bottom, with a **Copy JSON** button for downstream workflows.
 
 ## Why this exists
 
-In image curation workflows (ComfyUI, generative pipelines, etc.), **aesthetic judgment is a black box**. This panel is my answer: *operationalize aesthetic quality into inspectable, auditable dimensions.*
+In image curation workflows (ComfyUI, generative pipelines, etc.), **aesthetic judgment is often a black box**. This panel operationalizes visual quality into **inspectable, auditable signals** — closer to InkIdeator / HEAI-style dimension diagnostics than a single accept/reject score.
 
-## Research Context
+## Research context
 
-This project speaks to **HCI + Aesthetics + XAI-light**:
+**HCI · Aesthetics · XAI-light**
 
-- Not just an accept/reject score
-- A **dimension-level diagnostic** that makes aesthetic reasoning transparent
-- Designed for researchers and practitioners who want to understand *why* an image works (or doesn't)
+- Not just an accept/reject score  
+- Dimension-level diagnostics with linked visual evidence  
+- Descriptive proxies you can pair with your own taste and task context  
 
 ## Stack
 
-- Python · Gradio 5 · PyTorch (MPS / CPU / CUDA auto)
-- Hugging Face Transformers (CLIP ViT-L/14) · LAION aesthetic predictor weights
-- OpenCV (proxy metrics) · GPT-4o mini / HF Inference (optional rationales)
+- Python · **Gradio 5.50** · PyTorch (MPS / CUDA / CPU auto)  
+- Hugging Face Transformers — CLIP ViT-L/14, Intel DPT depth  
+- OpenCV — proxy metrics & diagnostic maps  
+- Optional: OpenAI / HF Inference for rationales  
 
-## Try it (online)
+## Project layout
 
-Open the Hugging Face Space — upload an image, see the LAION score, explore the sliders, read the rationales. No install required.
+```
+AestheticDissectionPanel/
+├── app.py                 # Gradio UI
+├── aesthetic_core/        # CLIP, LAION scorer, dissection, depth, viz
+├── css/custom.css         # Apple-minimal theme
+├── src/rationale.py       # LLM / template rationales
+└── scripts/deploy*.sh     # GitHub + HF deploy helpers
+```
 
 ## Run locally
 
 ```bash
-git clone git@github.com:MindyKKyan/Aesthetic_Dissection_Panel.git
+git clone https://github.com/MindyKKyan/Aesthetic_Dissection_Panel.git
 cd Aesthetic_Dissection_Panel
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-export PYTORCH_ENABLE_MPS_FALLBACK=1   # optional, M3 Mac
+export PYTORCH_ENABLE_MPS_FALLBACK=1   # optional, Apple Silicon
 python app.py
 # → http://127.0.0.1:7860
 ```
 
-First run downloads CLIP ViT-L/14 weights (~900 MB) and the LAION linear head automatically.
+**First run** downloads model weights automatically:
 
-Optional LLM rationales: set `OPENAI_API_KEY` or `HF_TOKEN` in your environment (or HF Space Secrets).
+- CLIP ViT-L/14 (~900 MB) + LAION linear head  
+- Intel DPT depth model (~400 MB, on first depth analysis)  
+
+**Optional rationales:** set `OPENAI_API_KEY` or `HF_TOKEN` in your environment (or HF Space Secrets).
+
+## Deploy
+
+```bash
+# GitHub + Hugging Face (Terminal.app recommended)
+export GITHUB_PAT="ghp_xxxx"   # classic PAT, repo scope
+hf auth login
+bash scripts/deploy.sh
+
+# Hugging Face only
+bash scripts/deploy_hf_only.sh
+```
+
+## Language
+
+Use the dropdown in the top-right corner: **English · 中文简体 · 中文繁體**. Switching language updates labels, guides, and empty-state copy without re-uploading.
 
 ---
 © 2026 — research demonstration prototype.

@@ -6,17 +6,13 @@ CLIP ViT-L/14 (768-d CLS embedding) + sa_0_4_vit_l_14_linear.pth → score ~0–
 from __future__ import annotations
 
 import urllib.request
+from pathlib import Path
 
 import torch
 import torch.nn as nn
 from PIL import Image
 
-from .config import (
-    CLIP_MODEL_ID,
-    DEVICE,
-    LAION_WEIGHTS_PATH,
-    LAION_WEIGHTS_URL,
-)
+from .config import CLIP_MODEL_ID, DEVICE, LAION_WEIGHTS_PATH, LAION_WEIGHTS_URL
 
 _clip_model = None
 _clip_processor = None
@@ -24,8 +20,6 @@ _aesthetic_head: nn.Linear | None = None
 
 
 def _download_weights() -> Path:
-    from pathlib import Path
-
     if not LAION_WEIGHTS_PATH.exists():
         LAION_WEIGHTS_PATH.parent.mkdir(parents=True, exist_ok=True)
         urllib.request.urlretrieve(LAION_WEIGHTS_URL, LAION_WEIGHTS_PATH)

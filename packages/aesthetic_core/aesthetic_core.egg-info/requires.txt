@@ -1,10 +1,6 @@
--e packages/aesthetic_core
 torch>=2.1.0
 torchvision>=0.16.0
 transformers>=4.36.0
 pillow>=10.0.0
 numpy>=1.26.0
-gradio==5.50.0
 opencv-python-headless>=4.8.0
-huggingface_hub>=0.20.0
-openai>=1.0.0

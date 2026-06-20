@@ -4,8 +4,9 @@ emoji: 🔬
 colorFrom: indigo
 colorTo: red
 sdk: gradio
-sdk_version: "5.10.0"
+sdk_version: "5.50.0"
 app_file: app.py
+python_version: "3.11"
 pinned: false
 license: apache-2.0
 ---
@@ -53,7 +54,7 @@ Open the Hugging Face Space — upload an image, see the LAION score, explore th
 git clone git@github.com:MindyKKyan/Aesthetic_Dissection_Panel.git
 cd Aesthetic_Dissection_Panel
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt   # installs packages/aesthetic_core automatically
 export PYTORCH_ENABLE_MPS_FALLBACK=1   # optional, M3 Mac
 python app.py
 # → http://127.0.0.1:7860

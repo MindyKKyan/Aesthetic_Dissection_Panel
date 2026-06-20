@@ -1,0 +1,12 @@
+README.md
+pyproject.toml
+aesthetic_core/__init__.py
+aesthetic_core/alignment.py
+aesthetic_core/config.py
+aesthetic_core/dissection.py
+aesthetic_core/laion_scorer.py
+aesthetic_core.egg-info/PKG-INFO
+aesthetic_core.egg-info/SOURCES.txt
+aesthetic_core.egg-info/dependency_links.txt
+aesthetic_core.egg-info/requires.txt
+aesthetic_core.egg-info/top_level.txt

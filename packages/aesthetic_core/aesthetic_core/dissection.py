@@ -43,36 +43,6 @@ def _clip01(x: float) -> float:
     return float(max(0.0, min(1.0, x)))
 
 
-def _color_harmony(img: Image.Image) -> dict:
-    """HSV hue histogram spread (entropy) × luminance contrast ratio proxy."""
-    hue, sat, val, arr = _hsv_arrays(img)
-    active = sat > 0.08
-    if active.sum() < 10:
-        spread = 0.3
-    else:
-        h_active = hue[active]
-        hist, _ = np.histogram(h_active, bins=36, range=(0, 1), density=True)
-        hist = hist + 1e-8
-        entropy = -float(np.sum(hist * np.log(hist))) / math.log(36)
-        spread = _clip01(entropy / 0.85)
-
-    lum = 0.2126 * arr[:, :, 0] + 0.7152 * arr[:, :, 1] + 0.0722 * arr[:, :, 2]
-    p95, p05 = float(np.percentile(lum, 95)), float(np.percentile(lum, 5))
-    contrast = _clip01((p95 - p05) / 0.75)
-
-    value = _clip01(0.55 * spread + 0.45 * contrast)
-    return {
-        "id": "color_harmony",
-        "label": "Color Harmony",
-        "value": round(value, 3),
-        "raw": {
-            "hue_entropy_norm": round(spread, 4),
-            "luminance_contrast": round(contrast, 4),
-        },
-        "detail": f"hue spread {spread:.2f}, luminance contrast {contrast:.2f}",
-    }
-
-
 def _saliency_com(img: Image.Image) -> tuple[float, float, float]:
     """Return (cx, cy, offset) in 0–1 coords; offset = distance from center."""
     arr = _rgb_array(img)
@@ -105,9 +75,43 @@ def _saliency_com(img: Image.Image) -> tuple[float, float, float]:
     return cx / w, cy / h, offset
 
 
+def composition_offset(img: Image.Image) -> float:
+    """Saliency center-of-mass offset from image center (0 = centered, higher = shifted)."""
+    _, _, offset = _saliency_com(img.convert("RGB"))
+    return round(offset, 4)
+
+
+def _color_harmony(img: Image.Image) -> dict:
+    hue, sat, val, arr = _hsv_arrays(img)
+    active = sat > 0.08
+    if active.sum() < 10:
+        spread = 0.3
+    else:
+        h_active = hue[active]
+        hist, _ = np.histogram(h_active, bins=36, range=(0, 1), density=True)
+        hist = hist + 1e-8
+        entropy = -float(np.sum(hist * np.log(hist))) / math.log(36)
+        spread = _clip01(entropy / 0.85)
+
+    lum = 0.2126 * arr[:, :, 0] + 0.7152 * arr[:, :, 1] + 0.0722 * arr[:, :, 2]
+    p95, p05 = float(np.percentile(lum, 95)), float(np.percentile(lum, 5))
+    contrast = _clip01((p95 - p05) / 0.75)
+
+    value = _clip01(0.55 * spread + 0.45 * contrast)
+    return {
+        "id": "color_harmony",
+        "label": "Color Harmony",
+        "value": round(value, 3),
+        "raw": {
+            "hue_entropy_norm": round(spread, 4),
+            "luminance_contrast": round(contrast, 4),
+        },
+        "detail": f"hue spread {spread:.2f}, luminance contrast {contrast:.2f}",
+    }
+
+
 def _composition_balance(img: Image.Image) -> dict:
     cx, cy, offset = _saliency_com(img)
-    # High bar = well balanced (near center); low = shifted
     value = _clip01(1.0 - offset / 0.45)
     return {
         "id": "composition_balance",
@@ -133,18 +137,30 @@ def _saturation_intensity(img: Image.Image) -> dict:
 
 def _edge_complexity(img: Image.Image) -> dict:
     arr = _rgb_array(img)
-    gray = (0.2126 * arr[:, :, 0] + 0.7152 * arr[:, :, 1] + 0.0722 * arr[:, :, 2] * 255).astype(
-        np.uint8
-    )
+    lum = 0.2126 * arr[:, :, 0] + 0.7152 * arr[:, :, 1] + 0.0722 * arr[:, :, 2]
+    gray = (lum * 255).astype(np.uint8)
     if _HAS_CV2:
-        edges = cv2.Canny(gray, 80, 160)
+        h, w = gray.shape
+        scale = min(1.0, 512 / max(h, w))
+        if scale < 1.0:
+            gray = cv2.resize(
+                gray,
+                (int(w * scale), int(h * scale)),
+                interpolation=cv2.INTER_AREA,
+            )
+        median = float(np.median(gray))
+        lower = int(max(0, 0.66 * median))
+        upper = int(min(255, 1.33 * median))
+        if upper - lower < 20:
+            lower, upper = 50, 150
+        edges = cv2.Canny(gray, lower, upper)
         density = float(edges.mean()) / 255.0
     else:
-        gx = np.abs(np.diff(gray.astype(np.float32), axis=1)).mean()
-        gy = np.abs(np.diff(gray.astype(np.float32), axis=0)).mean()
-        density = _clip01((gx + gy) / 120.0)
+        gx = np.abs(np.diff(lum, axis=1)).mean()
+        gy = np.abs(np.diff(lum, axis=0)).mean()
+        density = _clip01((gx + gy) / 0.35)
 
-    value = _clip01(density / 0.35)
+    value = _clip01(density / 0.12)
     return {
         "id": "edge_complexity",
         "label": "Edge Complexity",
@@ -155,18 +171,15 @@ def _edge_complexity(img: Image.Image) -> dict:
 
 
 def _warm_cool(img: Image.Image) -> dict:
-    """Hue centroid mapped: 0=cool, 1=warm."""
     hue, sat, _, _ = _hsv_arrays(img)
     active = sat > 0.06
     if active.sum() < 10:
         centroid = 0.5
     else:
         h = hue[active]
-        # Circular mean on hue circle
         ang = h * 2 * math.pi
         centroid = (math.atan2(float(np.sin(ang).mean()), float(np.cos(ang).mean())) / (2 * math.pi)) % 1.0
 
-    # Map hue: blues/greens (~0.45–0.75) = cool, reds/oranges (~0.0–0.12, 0.88–1.0) = warm
     warm_score = 1.0 - abs(((centroid + 0.5) % 1.0) - 0.5) * 2
     warm_score = _clip01(warm_score * 0.6 + 0.2 if centroid < 0.2 or centroid > 0.85 else 0.35)
     return {

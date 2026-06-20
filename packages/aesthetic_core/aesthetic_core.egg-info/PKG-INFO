@@ -1,0 +1,22 @@
+Metadata-Version: 2.4
+Name: aesthetic-core
+Version: 0.1.0
+Summary: Shared CLIP, LAION, dissection, and style-alignment metrics
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: torch>=2.1.0
+Requires-Dist: torchvision>=0.16.0
+Requires-Dist: transformers>=4.36.0
+Requires-Dist: pillow>=10.0.0
+Requires-Dist: numpy>=1.26.0
+Requires-Dist: opencv-python-headless>=4.8.0
+
+# aesthetic-core
+
+Shared Python package for CLIP/LAION scoring, aesthetic dissection proxies, and style-alignment metrics.
+
+Used by `AestheticDissectionPanel` and `StyleBallot` in the Deliberative Visual Co-Creation monorepo.
+
+```bash
+pip install -e packages/aesthetic_core
+```

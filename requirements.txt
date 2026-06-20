@@ -1,3 +1,5 @@
+# Install shared core from repo root first:
+#   pip install -e packages/aesthetic_core
 torch>=2.1.0
 torchvision>=0.16.0
 transformers>=4.36.0

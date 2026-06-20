@@ -26,32 +26,35 @@ def _template_rationale(dim: dict, laion_score: float) -> str:
 
     templates = {
         "color_harmony": {
-            "high": f"Color palette shows coherent spread and contrast ({detail}) — reads curated and harmonious.",
-            "moderate": f"Color harmony is acceptable but not exceptional ({detail}) — some palette tension remains.",
-            "low": f"Limited hue diversity or weak contrast ({detail}) — palette may feel flat or disjointed.",
+            "high": f"Wide hue spread with strong light–dark separation ({detail}) — reads as a structured palette.",
+            "moderate": f"Balanced color structure ({detail}) — neither flat nor chaotic.",
+            "low": f"Narrow palette or low contrast ({detail}) — may read as muted or monochrome.",
         },
         "composition_balance": {
-            "high": f"Visual mass sits near center ({detail}) — balanced layout with safe text zones.",
-            "moderate": f"Slight compositional drift ({detail}) — monitor crop and headline placement.",
-            "low": f"Strong center-of-mass shift ({detail}) — ad text zone or focal balance may be compromised.",
+            "high": f"Visual mass near center ({detail}) — symmetric, stable framing.",
+            "moderate": f"Mild asymmetry ({detail}) — subject slightly off-center; can feel dynamic.",
+            "low": f"Strong asymmetry ({detail}) — edge-weighted or rule-breaking layout (not inherently bad).",
         },
         "saturation_intensity": {
-            "high": f"High saturation ({detail}) — pushes a bold, glamorous feel; watch for 'cheap neon' on luxury briefs.",
-            "moderate": f"Moderate saturation ({detail}) — energetic but still controllable for brand tone.",
-            "low": f"Muted saturation ({detail}) — restrained, premium-leaning palette.",
+            "high": f"Vivid chroma ({detail}) — bold, energetic color presence.",
+            "moderate": f"Moderate vividness ({detail}) — controlled color energy.",
+            "low": f"Muted or achromatic ({detail}) — restrained, minimal, or grayscale palette.",
         },
         "edge_complexity": {
-            "high": f"Rich edge structure ({detail}) — high visual detail and texture complexity.",
-            "moderate": f"Moderate edge density ({detail}) — enough detail without visual noise.",
-            "low": f"Low edge complexity ({detail}) — minimal, clean surfaces; may feel flat if too low.",
+            "high": f"Rich edge structure ({detail}) — textured, detailed surfaces.",
+            "moderate": f"Moderate texture ({detail}) — visible structure without noise.",
+            "low": f"Smooth surfaces ({detail}) — minimal fine detail; clean or flat depending on intent.",
         },
         "warm_cool": {
-            "high": f"Warm hue bias ({detail}) — inviting, skin-friendly, lifestyle-ad tone.",
-            "moderate": f"Neutral temperature ({detail}) — flexible for mixed brand palettes.",
-            "low": f"Cool hue bias ({detail}) — clinical, tech, or premium-minimal associations.",
+            "high": f"Warm hue bias ({detail}) — reds/oranges/yellows dominate the mood.",
+            "moderate": f"Neutral temperature ({detail}) — mixed hues, flexible mood.",
+            "low": f"Cool hue bias ({detail}) — blues/greens dominate the mood.",
         },
     }
+    interpretation = dim.get("interpretation", "")
     base = templates.get(dim_id, {}).get(lvl, f"{dim['label']} is {lvl} ({v:.0%}). {detail}")
+    if interpretation and interpretation not in base:
+        base = f"{interpretation.capitalize()}. {base}"
     if laion_score >= 6.5 and v >= 0.7:
         return base
     if laion_score < 5.0 and v < 0.4:

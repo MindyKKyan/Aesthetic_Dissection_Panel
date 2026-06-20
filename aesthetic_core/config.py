@@ -16,6 +16,7 @@ else:
     DEVICE = torch.device("cpu")
 
 CLIP_MODEL_ID = "openai/clip-vit-large-patch14"
+DEPTH_MODEL_ID = "Intel/dpt-hybrid-midas"
 LAION_WEIGHTS_URL = (
     "https://github.com/LAION-AI/aesthetic-predictor/raw/main/sa_0_4_vit_l_14_linear.pth"
 )
